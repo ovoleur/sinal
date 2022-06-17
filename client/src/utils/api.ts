@@ -15,7 +15,6 @@ import {
   Lobby,
   Packet,
   Player,
-  Player1vs1,
   TriesHistory,
   UpdateLobbyJoinPayload,
   UpdateLobbyLeavePayload,
@@ -571,11 +570,11 @@ export const lobbyOneVsOneAddEvents = (
     }
   });
 
-  socket.on("winning_game_1vs1", (winner: Player1vs1) => {
+  socket.on("winning_game_1vs1", (winner: Player) => {
     setIsFinished(true);
     if (winner === null) {
       toast({
-        title: "Egalité.",
+        title: "On n'a pas pu vous départager.",
         status: "info",
         isClosable: true,
         duration: 2500,

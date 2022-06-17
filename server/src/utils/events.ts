@@ -413,7 +413,7 @@ export const startGame1vs1Event = async (
   };
 
   let timeout = setTimeout(() => {
-    tempsEcoule1vs1(io, game, lobby, word);
+    tempsEcoule1vs1(io, game, lobby);
   }, globalTime);
   timeoutMap.set(gameId, timeout);
 
@@ -546,13 +546,7 @@ export const guessWord1vs1Event = (
           // If we have reached the final round, then, it's the end of the game
           if (game.roundNumber >= game.nbRoundsTotal) {
             // We get the winner of the game (or the tie if it's a tie)
-            let winner = get1vs1GameWinner(
-              io,
-              player,
-              otherPlayer,
-              gameId,
-              lobbyId
-            );
+            let winner = get1vs1GameWinner(player, otherPlayer, lobbyId);
 
             io.to(gameId).emit("winning_game_1vs1", winner);
 
@@ -566,11 +560,11 @@ export const guessWord1vs1Event = (
             sendAnnounceChatMessageWord(io, "round", lobby.id, game.id);
             // Launch another round
             game.roundNumber++;
-            let word = newWord1vs1(io, game, lobby);
+            newWord1vs1(game, lobby);
 
             // Waiting 3 seconds until the next round
             setTimeout(() => {
-              setGlobalTimeout(io, game, lobby, word);
+              setGlobalTimeout(io, game, lobby);
               io.to(gameId).emit("next_round", game);
             }, 3000);
           }
@@ -581,13 +575,7 @@ export const guessWord1vs1Event = (
 
           // If we have reached the final round, then, it's the end of the game
           if (game.roundNumber >= game.nbRoundsTotal) {
-            let winner = get1vs1GameWinner(
-              io,
-              player,
-              otherPlayer,
-              gameId,
-              lobbyId
-            );
+            let winner = get1vs1GameWinner(player, otherPlayer, lobbyId);
 
             io.to(gameId).emit("winning_game_1vs1", winner);
 
@@ -600,12 +588,12 @@ export const guessWord1vs1Event = (
           } else {
             // Launch another round
             game.roundNumber++;
-            let word = newWord1vs1(io, game, lobby);
+            newWord1vs1(game, lobby);
 
             sendAnnounceChatMessageWord(io, "round", lobby.id, game.id);
             // Waiting 3 seconds until the next round
             setTimeout(() => {
-              setGlobalTimeout(io, game, lobby, word);
+              setGlobalTimeout(io, game, lobby);
               io.to(gameId).emit("next_round", game);
             }, 3000);
           }
@@ -617,13 +605,7 @@ export const guessWord1vs1Event = (
 
         if (game.roundNumber >= game.nbRoundsTotal) {
           // We get the winner of the game (or the tie if it's a tie)
-          let winner = get1vs1GameWinner(
-            io,
-            player,
-            otherPlayer,
-            gameId,
-            lobbyId
-          );
+          let winner = get1vs1GameWinner(player, otherPlayer, lobbyId);
 
           io.to(gameId).emit("winning_game_1vs1", winner);
 
@@ -637,11 +619,11 @@ export const guessWord1vs1Event = (
           sendAnnounceChatMessageWord(io, "round", lobby.id, game.id);
           // Launch another round
           game.roundNumber++;
-          let word = newWord1vs1(io, game, lobby);
+          newWord1vs1(game, lobby);
 
           // Waiting 3 seconds until the next round
           setTimeout(() => {
-            setGlobalTimeout(io, game, lobby, word);
+            setGlobalTimeout(io, game, lobby);
             io.to(gameId).emit("next_round", game);
           }, 3000);
         }
@@ -656,7 +638,7 @@ export const guessWord1vs1Event = (
 
         // Execute the function after timeAfterFirstGuess (60 seconds by default)
         timeout = setTimeout(() => {
-          tempsEcoule1vs1(io, game, lobby, word);
+          tempsEcoule1vs1(io, game, lobby);
         }, game.timeAfterFirstGuess);
 
         timeoutMap.set(gameId, timeout);
@@ -678,13 +660,7 @@ export const guessWord1vs1Event = (
       if (lobby && lobby.lastGame) {
         if (game.roundNumber >= game.nbRoundsTotal) {
           // We get the winner of the game (or the tie if it's a tie)
-          let winner = get1vs1GameWinner(
-            io,
-            player,
-            otherPlayer,
-            gameId,
-            lobbyId
-          );
+          let winner = get1vs1GameWinner(player, otherPlayer, lobbyId);
 
           io.to(gameId).emit("winning_game_1vs1", winner);
 
@@ -701,11 +677,11 @@ export const guessWord1vs1Event = (
           sendAnnounceChatMessageWord(io, "round", lobby.id, game.id);
           // Launch another round
           game.roundNumber++;
-          let word = newWord1vs1(io, game, lobby);
+          newWord1vs1(game, lobby);
 
           // Waiting 3 seconds until the next round
           setTimeout(() => {
-            setGlobalTimeout(io, game, lobby, word);
+            setGlobalTimeout(io, game, lobby);
             io.to(gameId).emit("next_round", game);
           }, 3000);
         }
@@ -714,13 +690,7 @@ export const guessWord1vs1Event = (
       io.to(gameId).emit("winning_round_1vs1", otherPlayer.id);
       otherPlayer.nbWins++;
       if (game.roundNumber >= game.nbRoundsTotal) {
-        let winner = get1vs1GameWinner(
-          io,
-          player,
-          otherPlayer,
-          gameId,
-          lobbyId
-        );
+        let winner = get1vs1GameWinner(player, otherPlayer, lobbyId);
 
         io.to(gameId).emit("winning_game_1vs1", winner);
 
@@ -733,11 +703,11 @@ export const guessWord1vs1Event = (
         sendAnnounceChatMessageWord(io, "round", lobby.id, game.id);
         // Launch another round
         game.roundNumber++;
-        let word = newWord1vs1(io, game, lobby);
+        newWord1vs1(game, lobby);
 
         // Waiting 3 seconds until the next round
         setTimeout(() => {
-          setGlobalTimeout(io, game, lobby, word);
+          setGlobalTimeout(io, game, lobby);
           io.to(gameId).emit("next_round", game);
         }, 3000);
       }
@@ -752,37 +722,63 @@ export const guessWord1vs1Event = (
 const tempsEcoule1vs1 = (
   io: Server,
   game: Game1vs1 | undefined,
-  lobby?: LobbyType | undefined,
-  word?: string
+  lobby?: LobbyType | undefined
 ) => {
-  if (game !== undefined && lobby !== undefined && word) {
+  if (
+    game !== undefined &&
+    lobby !== undefined &&
+    lobby.lastGame !== undefined
+  ) {
     //initialise lastGame of the lobby (currently the game being played)
     lobby.lastGame = {
+      ...lobby.lastGame,
       gameMode: "1vs1",
       playerList: lobby.playerList,
       winner: undefined,
-      wordsToGuess: [word],
       triesHistory: lobby.lastGame?.triesHistory || [[]],
     };
     lobby.state = "pre-game";
 
     // FIXME: For the moment context is "finished" whatever happens, but move and change to "round" where necessary
-    sendAnnounceChatMessageWord(io, "finished", lobby.id, game.id);
 
     if (game.playerOne.hasWon && !game.playerTwo.hasWon) {
-      //player one won
+      // Player One has Won
       lobby.lastGame.winner = playerMap.get(game.playerOne.id);
-      io.to(game.id).emit("wining_player_1vs1", game.playerOne.id);
+      game.playerOne.nbWins++;
+
+      io.to(game.id).emit("winning_round_1vs1", game.playerOne.id);
     } else if (!game.playerOne.hasWon && game.playerTwo.hasWon) {
-      //player two won
+      // Player Two has Won
       lobby.lastGame.winner = playerMap.get(game.playerTwo.id);
-      io.to(game.id).emit("wining_player_1vs1", game.playerTwo.id);
+      game.playerTwo.nbWins++;
+
+      io.to(game.id).emit("winning_round_1vs1", game.playerTwo.id);
     } else {
-      //nobody won, normally if both players had won then the timer is clear so tempsEcoule1vs1 is never called
-      io.to(game.id).emit("draw_1vs1");
+      // nobody won, normally if both players had won then the timer is clear so tempsEcoule1vs1 is never called
+      io.to(game.id).emit("draw_round_1vs1");
     }
-    io.to(game.id).emit("ending_game", { lobby });
-    io.to(game.id).socketsLeave(game.id);
+    if (game.roundNumber < game.nbRoundsTotal) {
+      game.roundNumber++;
+      newWord1vs1(game, lobby);
+
+      sendAnnounceChatMessageWord(io, "round", lobby.id, game.id);
+
+      // Waiting 3 seconds until the next round
+      setTimeout(() => {
+        setGlobalTimeout(io, game, lobby);
+        io.to(game.id).emit("next_round", game);
+      }, 3000);
+    } else {
+      let winner = get1vs1GameWinner(game.playerOne, game.playerTwo, lobby.id);
+
+      io.to(game.id).emit("winning_game_1vs1", winner);
+
+      lobby.lastGame = {
+        ...lobby.lastGame,
+        winner,
+      };
+      ending1vs1Game(io, lobby, game.id);
+    }
   }
 };
 
@@ -817,23 +813,19 @@ const ending1vs1Game = (io: Server, lobby: LobbyType, gameId: string) => {
  * @returns The winner of the match
  */
 const get1vs1GameWinner = (
-  io: Server,
   player: Player1vs1Type,
   otherPlayer: Player1vs1Type,
-  gameId: string,
   lobbyId: string
 ) => {
   let winner: Player | undefined;
   if (player.nbWins > otherPlayer.nbWins) {
     // If the player has won more rounds, he wins the game
-    io.to(gameId).emit("wining_game_1vs1", player.id);
     winner = {
       id: player.id,
       lobbyId,
       name: player.name,
     };
   } else if (player.nbWins < otherPlayer.nbWins) {
-    io.to(gameId).emit("wining_game_1vs1", otherPlayer.id);
     winner = {
       id: otherPlayer.id,
       lobbyId,
@@ -841,7 +833,6 @@ const get1vs1GameWinner = (
     };
   } else {
     // If they have won the same number of games, there is a tie.
-    io.to(gameId).emit("draw_game_1vs1");
     winner = undefined;
   }
 
@@ -851,12 +842,11 @@ const get1vs1GameWinner = (
 /**
  * Function which is called when we have another round.
  * This function choose a new word to guess, and initialize all the properties of the new round.
- * @param io - Server
  * @param game - 1vs1 GameState
  * @param lobby - Lobby of the Game
  * @return The new word to guess
  */
-const newWord1vs1 = (io: Server, game: Game1vs1, lobby: LobbyType) => {
+const newWord1vs1 = (game: Game1vs1, lobby: LobbyType) => {
   if (game !== undefined) {
     // Clear the timeout of the game.
     let timeout = timeoutMap.get(game.id);
@@ -882,22 +872,17 @@ const newWord1vs1 = (io: Server, game: Game1vs1, lobby: LobbyType) => {
     game.playerOne.hasWon = false;
     game.playerTwo.nbLife = lobby.nbLifePerPlayer;
     game.playerTwo.hasWon = false;
-
-    return newWord;
-  } else {
-    return;
   }
 };
 
 const setGlobalTimeout = (
   io: Server,
   game: Game1vs1 | undefined,
-  lobby: LobbyType | undefined,
-  word: string | undefined
+  lobby: LobbyType | undefined
 ) => {
-  if (game !== undefined && word) {
+  if (game !== undefined) {
     let timeout = setTimeout(() => {
-      tempsEcoule1vs1(io, game, lobby, word);
+      tempsEcoule1vs1(io, game, lobby);
     }, game.globalTime);
 
     timeoutMap.set(game.id, timeout);
@@ -1367,14 +1352,14 @@ export const sendAnnounceChatMessageWord = (
   let word = idToWord.get(gameId);
 
   if (word) {
-    let content = "Partie terminée";
+    let content = "Partie terminée.";
 
     if (context === "round") {
-      content = "Round terminé";
+      content = "Round terminé.";
     }
 
     sendAnnounceChatMessage(io, {
-      content: `${content} Le mot était : ${word} !`,
+      content: `${content} Le mot était : ${word.toUpperCase()} !`,
       channelId: lobbyId,
     });
   }
@@ -1425,7 +1410,10 @@ export const leaveGameBr = async (
     //the current game have one less player
     game.playersLastNextRound -= 1;
     //Informs the other players that a player has left.
-    io.to(game.id).emit("player_leave", {playerId:game.playerList[indexPlayer].id, playerName:game.playerList[indexPlayer].name}); //emit the name of the player that leave
+    io.to(game.id).emit("player_leave", {
+      playerId: game.playerList[indexPlayer].id,
+      playerName: game.playerList[indexPlayer].name,
+    }); //emit the name of the player that leave
     let timeout;
     let index = game.playerList.findIndex((player) => playerId === player.id);
     //reset the disconnect listeners
